@@ -15,7 +15,7 @@ const patientRouter = express.Router();
 patientRouter.post("/create",authenticate ,registerPatient);
 
 // Get all patients
-patientRouter.get("/all", authenticate, getAllPatients);
+patientRouter.get("/all", getAllPatients);
 
 
 
