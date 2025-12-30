@@ -21,8 +21,8 @@ app.use(cookieParser());
 
 // --- CORS configuration ---
 const allowedOrigins = [
-  "http://localhost:5173",                      // local frontend
-  "https://clinic2-frontend.vercel.app",       // deployed frontend
+  "http://localhost:5173",                 // local frontend
+  "https://clinic2-frontend.vercel.app",  // deployed frontend
 ];
 
 const corsOptions = {
@@ -39,7 +39,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Handle preflight requests for API routes
+// --- Handle preflight requests for all /api routes ---
 app.options(/^\/api\/.*$/, cors(corsOptions));
 
 // --- Health check ---
@@ -61,7 +61,9 @@ app.get(/^\/(?!api).*/, (req, res) => {
 });
 
 // --- Catch-all for unmatched API methods (405) ---
+// Exclude OPTIONS requests so preflight works
 app.all(/^\/api\/.+$/, (req, res) => {
+  if (req.method === "OPTIONS") return res.sendStatus(200);
   res.status(405).json({ error: `Method ${req.method} not allowed` });
 });
 
