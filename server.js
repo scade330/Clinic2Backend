@@ -21,27 +21,25 @@ app.use(cookieParser());
 
 // --- CORS configuration ---
 const allowedOrigins = [
-  "http://localhost:5173",                 // local frontend
-  "https://clinic2-frontend.vercel.app",  // deployed frontend
+  "http://localhost:5173",                // local frontend
+  "https://clinic2-frontend.vercel.app"  // deployed frontend
 ];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // allow requests with no origin (like Postman)
+    console.log("CORS origin:", origin); // Debugging
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true, // important for cookies
+  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
-
-// --- Handle preflight OPTIONS requests ---
-app.options(/^\/.*$/, cors(corsOptions));
 
 // --- Health check ---
 app.get("/healthz", (req, res) => res.status(200).send("OK"));
