@@ -15,15 +15,23 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-/* ----------------------------------------------------
-   1️⃣ Core middleware
----------------------------------------------------- */
+/* -----------------------------
+   Remove duplicate slashes in URLs
+----------------------------- */
+app.use((req, res, next) => {
+  req.url = req.url.replace(/\/+/g, "/");
+  next();
+});
+
+/* -----------------------------
+   Core middleware
+----------------------------- */
 app.use(express.json());
 app.use(cookieParser());
 
-/* ----------------------------------------------------
-   2️⃣ CORS (MUST be before routes)
----------------------------------------------------- */
+/* -----------------------------
+   CORS configuration
+----------------------------- */
 const allowedOrigins = [
   "http://localhost:5173",
   "https://clinic2-frontend.vercel.app"
@@ -31,11 +39,8 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // allow requests with no origin (Postman, curl, server-to-server)
-    if (!origin) return callback(null, true);
-
+    if (!origin) return callback(null, true); // Postman, curl
     if (allowedOrigins.includes(origin)) return callback(null, true);
-
     return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
@@ -43,50 +48,44 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-// Apply CORS
 app.use(cors(corsOptions));
-
-// Required for preflight requests
 app.options(/.*/, cors(corsOptions));
 
-/* ----------------------------------------------------
-   3️⃣ Health check (useful on Vercel)
----------------------------------------------------- */
+/* -----------------------------
+   Health check
+----------------------------- */
 app.get("/healthz", (req, res) => res.status(200).send("OK"));
 
-/* ----------------------------------------------------
-   4️⃣ API routes (order matters!)
----------------------------------------------------- */
+/* -----------------------------
+   API routes
+----------------------------- */
 app.use("/api/user", userRouter);
 app.use("/api/patientsClinic2", patientRouter);
 
-/* ----------------------------------------------------
-   5️⃣ Catch-all for undefined API routes
----------------------------------------------------- */
-// This must come AFTER all valid API routes
-app.use("/api", (req, res) => {
+/* -----------------------------
+   Catch-all for invalid API routes
+----------------------------- */
+app.use("/api", cors(corsOptions), (req, res) => {
   res.status(405).json({
     error: `Method ${req.method} not allowed for this route`,
   });
 });
 
-/* ----------------------------------------------------
-   6️⃣ Serve frontend (if bundled together)
----------------------------------------------------- */
+/* -----------------------------
+   Serve frontend (if bundled)
+----------------------------- */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendBuildPath = path.join(__dirname, "../frontend/dist");
 
 app.use(express.static(frontendBuildPath));
-
-// React Router fallback
 app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.join(frontendBuildPath, "index.html"));
 });
 
-/* ----------------------------------------------------
-   7️⃣ Start server
----------------------------------------------------- */
+/* -----------------------------
+   Start server
+----------------------------- */
 const startServer = async () => {
   try {
     await connectDB();
