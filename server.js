@@ -34,43 +34,47 @@ const corsOptions = {
     // allow requests with no origin (Postman, curl, server-to-server)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+    if (allowedOrigins.includes(origin)) return callback(null, true);
 
     return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
+// Apply CORS
 app.use(cors(corsOptions));
 
-// ✅ REQUIRED for browser preflight requests
+// Required for preflight requests
 app.options(/.*/, cors(corsOptions));
-
-
 
 /* ----------------------------------------------------
    3️⃣ Health check (useful on Vercel)
 ---------------------------------------------------- */
-app.get("/healthz", (req, res) => {
-  res.status(200).send("OK");
+app.get("/healthz", (req, res) => res.status(200).send("OK"));
+
+/* ----------------------------------------------------
+   4️⃣ API routes (order matters!)
+---------------------------------------------------- */
+app.use("/api/user", userRouter);
+app.use("/api/patientsClinic2", patientRouter);
+
+/* ----------------------------------------------------
+   5️⃣ Catch-all for undefined API routes
+---------------------------------------------------- */
+// This must come AFTER all valid API routes
+app.use("/api", (req, res) => {
+  res.status(405).json({
+    error: `Method ${req.method} not allowed for this route`,
+  });
 });
 
 /* ----------------------------------------------------
-   4️⃣ API routes
----------------------------------------------------- */
-app.use("api/user", userRouter);
-app.use("api/patientsClinic2", patientRouter);
-
-/* ----------------------------------------------------
-   5️⃣ Serve frontend (only if bundled together)
+   6️⃣ Serve frontend (if bundled together)
 ---------------------------------------------------- */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const frontendBuildPath = path.join(__dirname, "../frontend/dist");
 
 app.use(express.static(frontendBuildPath));
@@ -78,19 +82,6 @@ app.use(express.static(frontendBuildPath));
 // React Router fallback
 app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.join(frontendBuildPath, "index.html"));
-});
-
-/* ----------------------------------------------------
-   6️⃣ Catch-all for unsupported API methods (LAST)
----------------------------------------------------- */
-app.all(/^\/api\/.+$/, (req, res) => {
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  res.status(405).json({
-    error: `Method ${req.method} not allowed`
-  });
 });
 
 /* ----------------------------------------------------
@@ -102,15 +93,10 @@ const startServer = async () => {
     console.log(chalk.green.bold("✅ Connected to database"));
 
     app.listen(PORT, () => {
-      console.log(
-        chalk.green.bold(`🚀 Server running on port ${PORT}`)
-      );
+      console.log(chalk.green.bold(`🚀 Server running on port ${PORT}`));
     });
   } catch (error) {
-    console.error(
-      chalk.red.bold("❌ Failed to start server"),
-      error
-    );
+    console.error(chalk.red.bold("❌ Failed to start server"), error);
     process.exit(1);
   }
 };
