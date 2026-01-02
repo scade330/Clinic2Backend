@@ -62,8 +62,8 @@ app.get("/healthz", (req, res) => {
 /* ----------------------------------------------------
    4️⃣ API routes
 ---------------------------------------------------- */
-app.use("/api/user", userRouter);
-app.use("/api/patientsClinic2", patientRouter);
+app.use("api/user", userRouter);
+app.use("api/patientsClinic2", patientRouter);
 
 /* ----------------------------------------------------
    5️⃣ Serve frontend (only if bundled together)
