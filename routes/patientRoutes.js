@@ -9,6 +9,9 @@ import {
   addTreatment,
   removeTreatment,
 } from "../controller/patientController.js";
+import { upload } from "../middleware/multer.js";
+import { addLabResultImage } from "../controller/patientController.js";
+
 
 import { authenticate } from "../middleware/authMiddleware.js";
 
@@ -41,5 +44,13 @@ patientRoutes.put("/:id", authenticate, updatePatient);
 
 // Delete patient
 patientRoutes.delete("/:id", authenticate, deletePatient);
+
+patientRoutes.post(
+  "/:id/lab-results",
+  authenticate,
+  upload.single("image"),
+  addLabResultImage
+);
+
 
 export default patientRoutes;

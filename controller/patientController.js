@@ -1,4 +1,6 @@
 import PatientClinic2 from "../models/patientsClinic2.js";
+import cloudinary from "../config/Cloudinary.js";
+import streamifier from "streamifier";
 
 // -----------------------------
 // Register new patient
@@ -228,3 +230,47 @@ export const deletePatient = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
+
+export const addLabResultImage = async (req, res) => {
+  try {
+    const patient = await PatientClinic2.findById(req.params.id);
+    if (!patient) {
+      return res.status(404).json({ success: false, error: "Patient not found" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: "Image is required" });
+    }
+
+    const uploadFromBuffer = () =>
+      new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "clinic/lab-results",
+            resource_type: "image"
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+
+    const result = await uploadFromBuffer();
+
+    patient.labResults.push({
+      imageUrl: result.secure_url,
+      publicId: result.public_id,
+      description: req.body.description || ""
+    });
+
+    await patient.save();
+
+    res.json({ success: true, patient });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+

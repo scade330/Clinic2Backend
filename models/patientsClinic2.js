@@ -40,7 +40,14 @@ const patientSchema = new Schema(
     allergies: { type: String, default: "", trim: true },
     diagnosis: { type: String, default: "", trim: true },
     physicalExam: { type: String, default: "", trim: true },
-    labResults: { type: String, default: "", trim: true },
+   labResults: [
+  {
+    imageUrl: { type: String, required: true },
+    publicId: { type: String, required: true },
+    description: { type: String, default: "", trim: true },
+    uploadedAt: { type: Date, default: Date.now }
+  }
+],
 
     // Vaccination Records
     vaccinations: [
